@@ -1,0 +1,76 @@
+name: Autograding Tests
+'on':
+  - push
+  - workflow_dispatch
+  - repository_dispatch
+permissions:
+  checks: write
+  actions: read
+  contents: read
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Integrity check - tests, pom.xml and grading.json must be unchanged
+        run: |
+          EXPECTED="75c0c9dec956c579b7d12bbe9300ce24ac851e83803879f8f3082eb185443531"
+          ACTUAL=$( (for f in $(find src/test/java -type f -name '*.java' | LC_ALL=C sort) pom.xml grading.json; do sed 's/\r$//' "$f"; done) | sha256sum | cut -d' ' -f1)
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::The test files, pom.xml, or grading.json in this repository differ from the assignment template. Grading has been stopped. Restore the original files (git checkout origin/main -- src/test pom.xml grading.json) and push again."
+            exit 1
+          fi
+          echo "Integrity check passed."
+      - name: "sortLowToHigh(int[]) sorts correctly (25)"
+        id: sortlowtohigh
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: "sortLowToHigh(int[]) sorts correctly"
+          setup-command: ''
+          command: mvn -B -q test -Dtest=SortLowToHighTest -Dsurefire.failIfNoSpecifiedTests=false
+          timeout: 5
+          max-score: 25
+      - name: "sortHighToLow(int[]) sorts correctly (20)"
+        id: sorthightolow
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: "sortHighToLow(int[]) sorts correctly"
+          setup-command: ''
+          command: mvn -B -q test -Dtest=SortHighToLowTest -Dsurefire.failIfNoSpecifiedTests=false
+          timeout: 5
+          max-score: 20
+      - name: "sortLowToHigh(ArrayList<Integer>) sorts correctly (20)"
+        id: sortlowtohighlist
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: "sortLowToHigh(ArrayList<Integer>) sorts correctly"
+          setup-command: ''
+          command: mvn -B -q test -Dtest=SortLowToHighListTest -Dsurefire.failIfNoSpecifiedTests=false
+          timeout: 5
+          max-score: 20
+      - name: "sortHighToLow(ArrayList<Integer>) sorts correctly (15)"
+        id: sorthightolowlist
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: "sortHighToLow(ArrayList<Integer>) sorts correctly"
+          setup-command: ''
+          command: mvn -B -q test -Dtest=SortHighToLowListTest -Dsurefire.failIfNoSpecifiedTests=false
+          timeout: 5
+          max-score: 15
+      - name: Autograding Reporter
+        uses: classroom-resources/autograding-grading-reporter@v1
+        env:
+          SORTLOWTOHIGH_RESULTS: "${{ steps.sortlowtohigh.outputs.result }}"
+          SORTHIGHTOLOW_RESULTS: "${{ steps.sorthightolow.outputs.result }}"
+          SORTLOWTOHIGHLIST_RESULTS: "${{ steps.sortlowtohighlist.outputs.result }}"
+          SORTHIGHTOLOWLIST_RESULTS: "${{ steps.sorthightolowlist.outputs.result }}"
+        with:
+          runners: sortlowtohigh,sorthightolow,sortlowtohighlist,sorthightolowlist

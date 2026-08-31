@@ -1,0 +1,6 @@
+[
+ {"test": "SortLowToHighTest",     "name": "sortLowToHigh(int[]) sorts correctly",             "points": 25},
+ {"test": "SortHighToLowTest",     "name": "sortHighToLow(int[]) sorts correctly",             "points": 20},
+ {"test": "SortLowToHighListTest", "name": "sortLowToHigh(ArrayList<Integer>) sorts correctly", "points": 20},
+ {"test": "SortHighToLowListTest", "name": "sortHighToLow(ArrayList<Integer>) sorts correctly", "points": 15}
+]
